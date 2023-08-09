@@ -2,8 +2,10 @@ package com.example.demo;
 
 import static org.mockserver.integration.ClientAndServer.startClientAndServer;
 import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import static org.mockserver.matchers.Times.exactly;
 import static org.mockserver.model.HttpForward.forward;
@@ -18,8 +20,10 @@ import org.mockserver.verify.VerificationTimes;
 
 import shaded_package.org.apache.http.HttpResponse;
 import shaded_package.org.apache.http.client.HttpClient;
+import shaded_package.org.apache.http.client.config.RequestConfig;
 import shaded_package.org.apache.http.client.methods.HttpGet;
 import shaded_package.org.apache.http.client.methods.HttpPost;
+import shaded_package.org.apache.http.config.ConnectionConfig;
 import shaded_package.org.apache.http.entity.StringEntity;
 import shaded_package.org.apache.http.impl.client.HttpClientBuilder;
 
@@ -54,12 +58,14 @@ class DemoApplicationTests {
                    .withPath("/index.html"),
                    exactly(1)
                 )
-                .forward(
+            .respond(response()
+            		.withBody("UGHHULA456").withDelay(TimeUnit.SECONDS, 3));
+                /*.forward(
                     forward()
                         .withHost("www.mock-server.com")
                         .withPort(80)
                         .withScheme(HttpForward.Scheme.HTTP)
-                );
+                )*/;
     }
 
 
@@ -74,7 +80,16 @@ class DemoApplicationTests {
     
     private HttpResponse hitTheServerWithGetRequest(String page) {
         String url = "http://127.0.0.1:1080/"+page;
-        HttpClient client = HttpClientBuilder.create().build();
+        RequestConfig config = RequestConfig.custom()
+        		//.setConnectionRequestTimeout(500)
+        		//.setSocketTimeout(500)
+        		//.setConnectionRequestTimeout(500)
+        		.build();
+        
+        HttpClient client = HttpClientBuilder
+        		.create()
+        		.setDefaultRequestConfig(config)
+        		.setConnectionTimeToLive(500, TimeUnit.MILLISECONDS).build();
         HttpResponse response=null;
         HttpGet get = new HttpGet(url);
         try {
